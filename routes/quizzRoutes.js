@@ -1,12 +1,32 @@
-//C:\Users\KALPNA\Desktop\secure-coding2\backend\routes\quizzRoutes.js
+//C:\Users\KALPNA\Desktop\secure-coding-dashboard\backend\routes\quizzRoutes.js
+
 import express from 'express';
 import Quiz from '../models/Quiz.js';
-import { protect } from '../middleware/authMiddleware.js';
 import QuizSubmission from '../models/QuizSubmission.js';
-// Optional: import controller logic
-// import { submitQuiz } from '../controllers/quizController.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+
+// 🧠 Create a new quiz
+router.post('/', protect, async (req, res) => {
+  try {
+    const { title, questions } = req.body;
+
+    if (!title || !Array.isArray(questions)) {
+      return res.status(400).json({ error: 'Invalid quiz format' });
+    }
+
+    const quiz = new Quiz({ title, questions });
+    await quiz.save();
+
+    res.status(201).json(quiz);
+  } catch (err) {
+    console.error('Quiz creation error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 // 🎯 Submit quiz answers and calculate score
 router.post('/:id/submit', protect, async (req, res) => {
@@ -22,23 +42,22 @@ router.post('/:id/submit', protect, async (req, res) => {
 
     quiz.questions.forEach((q) => {
       const correct = q.correctAnswer;
-      const userAnswer = userAnswers[q._id]; // Assumes answers keyed by question ID
+      const userAnswer = userAnswers[q._id];
 
       if (userAnswer === correct) {
         score++;
         feedback.push({
-          question: q.questionText,
+          question: q.text,
           result: '✅ Correct',
         });
       } else {
         feedback.push({
-          question: q.questionText,
+          question: q.text,
           result: `❌ Incorrect (Correct: ${correct})`,
         });
       }
     });
 
-    // 📝 Optional: Save submission to DB
     await QuizSubmission.create({
       quizId,
       userId: req.user._id,
@@ -58,6 +77,7 @@ router.post('/:id/submit', protect, async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 // 🕵️‍♀️ Get all quiz attempts for a user
 router.get('/quiz-history', protect, async (req, res) => {

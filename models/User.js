@@ -1,3 +1,4 @@
+//C:\Users\KALPNA\Desktop\secure-coding-dashboard\backend\models\User.js
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 
